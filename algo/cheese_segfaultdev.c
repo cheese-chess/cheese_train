@@ -7,35 +7,87 @@
 #include <cheese.h>
 #include <stdio.h>
 
-const int cheese_table[] = {
-  11, 12, 13, 14, 14, 13, 12, 11,
-  12, 13, 14, 15, 15, 14, 13, 12,
-  13, 14, 15, 16, 16, 15, 14, 13,
-  14, 15, 16, 17, 17, 16, 15, 14,
-  14, 15, 16, 17, 17, 16, 15, 14,
-  13, 14, 15, 16, 16, 15, 14, 13,
-  12, 13, 14, 15, 15, 14, 13, 12,
-  11, 12, 13, 14, 14, 13, 12, 11
+const int pawn_table[] = {
+  5, 6, 7, 8, 8, 7, 6, 5,
+  4, 5, 6, 7, 7, 6, 5, 4,
+  3, 4, 5, 6, 6, 5, 4, 3,
+  3, 3, 4, 5, 5, 4, 3, 3,
+  2, 3, 3, 4, 4, 3, 3, 2,
+  2, 2, 3, 4, 4, 3, 2, 2,
+  1, 1, 1, 1, 1, 1, 1, 1,
+  1, 1, 1, 1, 1, 1, 1, 1
+};
+
+const int knight_table[] = {
+  4, 4, 4, 8, 8, 4, 4, 4,
+  4, 6, 6, 4, 4, 6, 6, 4,
+  4, 2, 6, 6, 6, 6, 2, 4,
+  4, 4, 4, 4, 4, 4, 4, 4,
+  2, 4, 4, 4, 4, 4, 4, 2,
+  2, 2, 2, 2, 2, 2, 2, 2,
+  2, 2, 2, 2, 2, 2, 2, 2,
+  1, 1, 1, 1, 1, 1, 1, 1
+};
+
+const int rook_table[] = {
+  8, 7, 7, 8, 8, 7, 7, 8,
+  6, 5, 5, 6, 6, 5, 5, 6,
+  6, 5, 3, 5, 5, 3, 5, 6,
+  7, 6, 1, 5, 5, 1, 6, 7,
+  7, 6, 2, 5, 5, 2, 6, 7,
+  6, 5, 3, 5, 5, 3, 5, 6,
+  6, 5, 5, 6, 6, 5, 5, 6,
+  8, 7, 7, 8, 8, 7, 7, 8,
+};
+
+const int default_table[] = {
+  2, 3, 4, 5, 5, 4, 3, 2,
+  3, 4, 5, 6, 6, 5, 4, 3,
+  4, 5, 6, 7, 7, 6, 5, 4,
+  5, 6, 7, 8, 8, 7, 6, 5,
+  4, 5, 6, 7, 7, 6, 5, 4,
+  3, 4, 5, 6, 6, 5, 4, 3,
+  2, 3, 4, 5, 5, 4, 3, 2,
+  1, 2, 3, 4, 4, 3, 2, 1,
+};
+
+const int king_table[] = {
+  1, 1, 4, 5, 5, 4, 1, 1,
+  1, 2, 4, 6, 6, 4, 2, 1,
+  1, 2, 4, 5, 5, 4, 2, 1,
+  1, 2, 3, 4, 4, 3, 2, 1,
+  2, 3, 4, 5, 5, 4, 3, 2,
+  1, 2, 5, 6, 6, 5, 2, 1,
+  2, 3, 5, 8, 8, 5, 3, 2,
+  2, 2, 6, 7, 7, 6, 2, 2,
+};
+
+int magic_table[] = {
+  1, 3, 4, 6, 11, 1000
 };
 
 static int cheese_value(char piece, int pos) {
-  
   if (piece == ' ') return 0;
-  if (piece >= 'a') piece -= 32;
+
+  if (piece >= 'a') {
+    piece -= 32;
+  } else {
+    pos = pos % 8 + (7 - (pos / 8)) * 8;
+  }
 
   switch (piece) {
     case 'P':
-      return 1 * cheese_table[pos];
+      return magic_table[0] * pawn_table[pos];
     case 'B':
-      return 3 * cheese_table[pos];
+      return magic_table[1] * default_table[pos];
     case 'N':
-      return 3 * cheese_table[pos];
+      return magic_table[2] * knight_table[pos];
     case 'R':
-      return 5 * cheese_table[pos];
+      return magic_table[3] * default_table[pos];
     case 'Q':
-      return 9 * cheese_table[pos];
+      return magic_table[4] * default_table[pos];
     case 'K':
-      return 1000;
+      return magic_table[5] * king_table[pos];
   }
 
   return 0;
@@ -59,17 +111,33 @@ int cheese_eval(char *board, int turn) {
 
 int cheese_move(char *board, int *move, int do_move, int turn, int layers) {
   int **moves = chess_get_moves(board, turn);
-  if (!moves) return -10000000;
+  if (!moves) return -CHESS_MAX_SCORE;
 
   int move_cnt = 0;
 
   while (moves[move_cnt] != NULL) move_cnt++;
 
+  if (move_cnt) {
+    for (int i = 0; i < move_cnt; i++) {
+      int idx_1 = rand() % move_cnt;
+      int idx_2 = rand() % move_cnt;
+
+      if (idx_1 == idx_2) {
+        i--;
+        continue;
+      }
+
+      int *temp = moves[idx_1];
+      moves[idx_1] = moves[idx_2];
+      moves[idx_2] = temp;
+    }
+  }
+
   // printf("Possible moves: %d\n", move_cnt);
   // printf("Board: \"%s\"\n", board);
 
   int best_move = -1;
-  int best_score = -10000000;
+  int best_score = -CHESS_MAX_SCORE;
 
   char *board_clone = malloc(64);
 

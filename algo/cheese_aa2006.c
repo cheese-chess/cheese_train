@@ -1,5 +1,3 @@
-#ifdef CHEESE_ALGO_AA2006
-
 // THIS ALGORITHM IS BASED OFF OF SEGFAULTDEV'S ALGORITHM
 // SEE cheese_segfaultdev.c FOR THE ORIGINAL ALGORITHM
 
@@ -12,7 +10,7 @@
 #include <math.h>
 
 // King
-const int king_table[] = {
+const int aa_king_table[] = {
   18, 20, 19, 20, 20, 19, 20, 18,
   17, 17, 18, 19, 19, 18, 17, 17,
   16, 16, 17, 18, 18, 17, 16, 16,
@@ -24,7 +22,7 @@ const int king_table[] = {
 };
 
 //Knight
-const int knight_table[] = {
+const int aa_knight_table[] = {
   11, 11, 11, 11, 11, 11, 11, 11,
   11, 13, 13, 13, 13, 13, 13, 11,
   11, 13, 15, 15, 15, 15, 13, 11,
@@ -36,7 +34,7 @@ const int knight_table[] = {
 };
 
 //Bishop
-const int bishop_table[] = {
+const int aa_bishop_table[] = {
   11, 12, 12, 12, 12, 12, 12, 11,
   12, 13, 13, 13, 13, 13, 13, 12,
   12, 13, 15, 15, 15, 15, 13, 12,
@@ -48,7 +46,7 @@ const int bishop_table[] = {
 };
 
 //Queen
-const int queen_table[] = {
+const int aa_queen_table[] = {
   11, 12, 12, 15, 15, 12, 12, 11,
   12, 13, 13, 13, 13, 13, 13, 12,
   12, 13, 15, 15, 15, 15, 13, 12,
@@ -60,7 +58,7 @@ const int queen_table[] = {
 };
 
 //Rook
-const int rook_table[] = {
+const int aa_rook_table[] = {
   11, 12, 12, 12, 12, 12, 12, 11,
   12, 11, 11, 11, 11, 11, 11, 12,
   12, 11, 11, 11, 11, 11, 11, 12,
@@ -72,7 +70,7 @@ const int rook_table[] = {
 };
 
 //Pawn
-const int pawn_table[] = {
+const int aa_pawn_table[] = {
   20, 20, 20, 20, 20, 20, 20, 20,
   17, 17, 17, 17, 17, 17, 17, 17,
   13, 14, 15, 16, 16, 15, 14, 13,
@@ -83,46 +81,46 @@ const int pawn_table[] = {
   20, 20, 20, 20, 20, 20, 20, 20
 };
 
-static int cheese_value(char piece, int pos) {
+static int aa_cheese_value(char piece, int pos) {
     int black = 0;
     if (piece == ' ') return 0;
     if (piece >= 'a') piece -= 32;
 
     switch(piece) {
         case 'P':
-            return 1 * pawn_table[pos];
+            return 1 * aa_pawn_table[pos];
         case 'B': 
-            return 6 * bishop_table[pos];
+            return 6 * aa_bishop_table[pos];
         case 'N':
-            return 5 * knight_table[pos];
+            return 5 * aa_knight_table[pos];
         case 'R':
-            return 10 * rook_table[pos];
+            return 10 * aa_rook_table[pos];
         case 'Q':
-            return 900 * queen_table[pos];
+            return 900 * aa_queen_table[pos];
         case 'K':
-            return 10000 * king_table[pos];
+            return 10000 * aa_king_table[pos];
     }
 
     return 0;
 }
 
-int cheese_eval(char *board, int turn) {
+int aa_cheese_eval(char *board, int turn) {
   int score = 0;
 
   for (int i = 0; i < 64; i++) {
     if (chess_turn(board[i]) == CHESS_NONE) {
       continue;
     } else if (chess_turn(board[i]) == turn) {
-      score += cheese_value(board[i], i);
+      score += aa_cheese_value(board[i], i);
     } else {
-      score -= cheese_value(board[i], i);
+      score -= aa_cheese_value(board[i], i);
     }
   }
 
   return score;
 }
 
-int cheese_move(char *board, int *move, int do_move, int turn, int layers) {
+int aa_cheese_move(char *board, int *move, int do_move, int turn, int layers) {
   int **moves = chess_get_moves(board, turn);
   if (!moves) return -10101010;
 
@@ -130,8 +128,8 @@ int cheese_move(char *board, int *move, int do_move, int turn, int layers) {
 
   while (moves[move_cnt] != NULL) move_cnt++;
 
-  printf("Possible moves: %d\n", move_cnt);
-  printf("Board: \"%s\"\n", board);
+  // printf("Possible moves: %d\n", move_cnt);
+  // printf("Board: \"%s\"\n", board);
 
   int best_move = -1;
   int best_score = -10101010;
@@ -143,7 +141,9 @@ int cheese_move(char *board, int *move, int do_move, int turn, int layers) {
 
     chess_move(board_clone, moves[i]);
 
-    int score = cheese_eval(board_clone, turn);
+    int score = aa_cheese_eval(board_clone, turn);
+
+    if (score < best_score) continue;
 
     if (layers > 0) {
       int temp_score = -cheese_move(board_clone, NULL, 0, 1 - turn, layers - 1);
@@ -163,16 +163,14 @@ int cheese_move(char *board, int *move, int do_move, int turn, int layers) {
   free(board_clone);
 
   if (best_move >= 0) {
-    printf("Chosen move %d[%d('%c') to %d('%c')]: Score %d\n", best_move, moves[best_move][0], board[moves[best_move][0]], moves[best_move][1], board[moves[best_move][1]], best_score);
+    // printf("Chosen move %d[%d('%c') to %d('%c')]: Score %d\n", best_move, moves[best_move][0], board[moves[best_move][0]], moves[best_move][1], board[moves[best_move][1]], best_score);
     if (do_move) chess_move(board, moves[best_move]);
     if (move != NULL) memcpy(move, moves[best_move], sizeof(int) * 2);
   } else {
-    printf("No move chosen\n");
+    // printf("No move chosen\n");
   }
 
   chess_free(moves);
 
   return best_score;
 }
-
-#endif
